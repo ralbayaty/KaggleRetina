@@ -66,7 +66,7 @@ print(np.sum(hist_full))
 hist_mask[0], hist_mask[255] = 0, 0
 hist_full[0], hist_full[255] = 0, 0
 plt.subplot(231), plt.imshow(img_gray, 'gray'), plt.axis('off'), plt.title('image')
-plt.subplot(232), plt.imshow(mask,'gray'), plt.axis('off'), plt.title('filter mask')
+plt.subplot(232), plt.imshow(mask, 'gray'), plt.axis('off'), plt.title('filter mask')
 plt.subplot(233), plt.imshow(masked_img, 'gray'), plt.axis('off'), plt.title('image with mask')
 plt.subplot(234), plt.plot(hist_full), plt.plot(hist_mask), plt.title('BW Histograms')
 plt.xlim([0,256])
