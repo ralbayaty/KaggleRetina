@@ -24,18 +24,18 @@ def write_retina_images(file_list, which_set='train', dtype=None, ow=True):
     w2 = 201
     if which_set is 'test':
         im_path = '/media/dick/Storage1TB/test/'
-        array = np.memmap('/media/dick/External/KaggleRetina/test.mmap', 
-                   mode='w+', shape=(total_num, w1-1, w2-1, 1))
-        array_labels = np.memmap('/media/dick/External/KaggleRetina/test_labels.mmap', 
+        array = np.memmap('/media/dick/Storage1TB/transformed/test.mmap',
+                   mode='w+', shape=(total_num, w1-1, w2-1, 3))
+        array_labels = np.memmap('/media/dick/Storage1TB/transformed/test_labels.mmap',
                    mode='w+', shape=(total_num, 1), dtype='S12')
-        issues_file = open('/media/dick/External/KaggleRetina/test_issues.txt', 'w')
+        issues_file = open('/media/dick/Storage1TB/transformed/test_issues.txt', 'w')
     if which_set is 'train':
-        im_path = '/media/dick/Storage64GB_2/train/'
-        array = np.memmap('/media/dick/External/KaggleRetina/train.mmap', 
-                   mode='w+', shape=(total_num, w1-1, w2-1, 1))
-        array_labels = np.memmap('/media/dick/External/KaggleRetina/train_labels.mmap', 
+        im_path = '/media/dick/Storage1TB/train/'
+        array = np.memmap('/media/dick/Storage1TB/transformed/train.mmap',
+                   mode='w+', shape=(total_num, w1-1, w2-1, 3))
+        array_labels = np.memmap('/media/dick/Storage1TB/transformed/train_labels.mmap',
                    mode='w+', shape=(total_num, 1))
-        issues_file = open('/media/dick/External/KaggleRetina/train_issues.txt', 'w')
+        issues_file = open('/media/dick/Storage1TB/transformed/train_issues.txt', 'w')
     if ow is True:
         progress = 0.0
         for file_name in file_list:
@@ -46,12 +46,12 @@ def write_retina_images(file_list, which_set='train', dtype=None, ow=True):
             print(m, n, channel)
             if m >= w1 and n >= w2: 
                 for i in range(N):
-                    array[i,:,:] = np.reshape(img_patches[i], (w1-1,w2-1,1))
+                    array[int(progress), :, :] = np.reshape(img_patches[i], (w1-1, w2-1, channel))
                     # print(file_name[:-5], names[names.index(file_name[:-5])], labels[names.index(file_name[:-5])])
                     if which_set is 'train':
-                        array_labels[i] = labels[names.index(file_name[:-5])]
+                        array_labels[int(progress)] = labels[names.index(file_name[:-5])]
                     else:
-                        array_labels[i] = [file_name[:-5]]
+                        array_labels[int(progress)] = [file_name[:-5]]
                     progress += 1
                 print("\rProgress: " + str(round(progress*100/total_num, 3)) + " %"),
             else:
@@ -82,8 +82,8 @@ def write_retina_labels(file_list):
     w1 = 201
     w2 = 201
 
-    im_path = '/media/dick/Storage64GB_2/train/'
-    array_labels = np.memmap('/media/dick/External/KaggleRetina/train_labels.mmap', 
+    im_path = '/media/dick/Storage1TB/transformed/train/'
+    array_labels = np.memmap('/media/dick/Storage1TB/transformed/train_labels.mmap',
                              mode='w+', shape=(total_num, 1))
     progress = 0.0
     for file_name in file_list:
@@ -114,25 +114,25 @@ def read_retina_images(which_set='train'):
         im_path = '/media/dick/Storage1TB/test/'
         file_list = os.listdir(im_path)
         total_num = N*len(file_list)
-        array = np.memmap('/media/dick/External/KaggleRetina/test.mmap', 
-                   mode='r', shape=(total_num, w1-1, w2-1, 1))
-        array_labels = np.memmap('/media/dick/External/KaggleRetina/test_labels.mmap', 
+        array = np.memmap('/media/dick/Storage1TB/transformed/test.mmap',
+                   mode='r', shape=(total_num, w1-1, w2-1, 3))
+        array_labels = np.memmap('/media/dick/Storage1TB/transformed/test_labels.mmap',
                    mode='r', shape=(total_num, 1), dtype='S12')
         # issues_file = open('/media/dick/External/KaggleRetina/test_issues.txt', 'w')
     if which_set == 'train':
-        im_path = '/media/dick/Storage64GB_2/train/'
+        im_path = '/media/dick/Storage1TB/train/'
         file_list = os.listdir(im_path)
         total_num = N*len(file_list)
-        array = np.memmap('/media/dick/External/KaggleRetina/train.mmap', 
-                   mode='r', shape=(total_num, w1-1, w2-1, 1))
-        array_labels = np.memmap('/media/dick/External/KaggleRetina/train_labels.mmap', 
+        array = np.memmap('/media/dick/Storage1TB/transformed/train.mmap',
+                   mode='r', shape=(total_num, w1-1, w2-1, 3))
+        array_labels = np.memmap('/media/dick/Storage1TB/transformed/train_labels.mmap',
                    mode='r', shape=(total_num, 1))
         # issues_file = open('/media/dick/External/KaggleRetina/train_issues.txt', 'w')
 
     return array, array_labels
 
 
-def make_patches(img, N=100, black_thres=0.5, w1=201, w2=201):
+def make_patches(img, N=100, black_thres=0.15, w1=201, w2=201):
     """
     Takes an image and returns a user selected set of random patches.
 
@@ -160,8 +160,8 @@ def make_patches(img, N=100, black_thres=0.5, w1=201, w2=201):
     """
 
     m, n, channels = img.shape
-
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
     # gray_ = Image.fromarray(gray)
 
     # if m > w1 or n > w2:
@@ -197,12 +197,13 @@ def make_patches(img, N=100, black_thres=0.5, w1=201, w2=201):
         if sum(hist_full) > 0:
             hist_full = np.divide(hist_full, sum(hist_full))
             if hist_full[0] < black_thres:
-                patches.append(patch)
+                img2 = np.copy(img[(rand_m-center1):(rand_m+center1), (rand_n-center2):(rand_n+center2), :])
+                patches.append(img2)
     return patches
 
 
 def read_retina_train_labels():
-    with open('/media/dick/Storage64GB_2/trainLabels.csv', 'r') as f:
+    with open('/media/dick/Storage1TB/labels/trainLabels.csv', 'r') as f:
         reader = csv.reader(f, delimiter=',')
         names = []
         labels = []
@@ -241,13 +242,11 @@ def generate(which_set='train', start=None, stop=None,
     """
 
     if which_set == 'train':
-        im_path = '/media/dick/External/KaggleRetina/'
-        label_path = '/media/dick/External/KaggleRetina/'
-        # im_path = '/media/dick/Storage64GB_2/train'
-        # label_path = '/media/dick/Storage64GB_2'
+        im_path = '/media/dick/Storage1TB/transformed/'
+        label_path = '/media/dick/Storage1TB/labels/'
     else:
         assert which_set == 'test'
-        im_path = '/media/dick/External/KaggleRetina/'
+        im_path = '/media/dick/Storage1TB/transformed/'
         # im_path = '/media/dick/Storage/test'
 
     if data_type not in ['vector', 'conv2d']:
@@ -305,11 +304,11 @@ def generate(which_set='train', start=None, stop=None,
 
 if __name__ == '__main__':
     
-    test_file_names = os.listdir('/media/dick/Storage/test')
+    test_file_names = os.listdir('/media/dick/Storage1TB/transformed/test')
     N_test = len(test_file_names)
     print(str(N_test) + ' test files.')
 
-    train_file_names = os.listdir('/media/dick/Storage64GB_2/train')
+    train_file_names = os.listdir('/media/dick/Storage1TB/transformed/train')
     N_train = len(train_file_names)
     print(str(N_train) + ' train files.')
 
@@ -322,6 +321,6 @@ if __name__ == '__main__':
 
     # train_labels = write_retina_labels(train_file_names)
     # np.save('train_labels.npy', train_labels)
-    train_labels = np.load('/media/dick/Storage64GB_2/train_labels.npy')
+    train_labels = np.load('/media/dick/Storage1TB/labels/train_labels.npy')
     print(train_labels.shape)
 
